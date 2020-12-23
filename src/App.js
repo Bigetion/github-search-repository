@@ -1,34 +1,27 @@
 import { useRef, useState, Fragment } from "react";
+import { useDispatch } from "react-redux";
 
 import Card from "components/Card";
 import Input from "components/Input";
 import Loader from "components/Loader";
 
-import { submit } from "utils/proxy";
+// import { submit } from "utils/proxy";
 import { debounce } from "utils/general";
+
+import { searchData } from "store/app/actions";
+import useAppSelector from "store/app/selectors";
 
 import "./app.css";
 
 function App() {
+  const dispatch = useDispatch();
+
+  const { searchDataLoading, repoList = [] } = useAppSelector();
   const [searchText, setSearchText] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState([]);
-  const [active, setActive] = useState(false);
 
   const setDebounceSearchText = useRef(
     debounce((val) => {
-      setLoading(true);
-      submit("GET", `users/${val}/repos`, {}).then(
-        (response) => {
-          setLoading(false);
-          setActive(true);
-          setResults(response);
-        },
-        () => {
-          setResults([]);
-          setLoading(false);
-        }
-      );
+      dispatch(searchData(val));
     }, 500)
   ).current;
 
@@ -50,20 +43,20 @@ function App() {
           />
         </Card.Header>
         <Card.Body paddingless>
-          {loading && (
+          {searchDataLoading && (
             <div className="p-4 text-center">
               <Loader type="spinner" />
               <span>Searching...</span>
             </div>
           )}
-          {!loading && active && (
+          {!searchDataLoading && (
             <Fragment>
-              {results.length === 0 && (
+              {repoList.length === 0 && (
                 <div className="p-4 text-red-500">No data available</div>
               )}
-              {results.length > 0 && (
+              {repoList.length > 0 && (
                 <ul className="divide-y divide-gray-200">
-                  {results.map((item) => (
+                  {repoList.map((item) => (
                     <li key={item.id}>
                       <div className="block hover:bg-gray-50">
                         <div className="px-4 py-4 sm:px-6">
@@ -88,9 +81,9 @@ function App() {
             </Fragment>
           )}
         </Card.Body>
-        {!loading && results.length > 0 && (
+        {!searchDataLoading && repoList.length > 0 && (
           <Card.Footer className="p-5">
-            <b className="mr-2">{results.length}</b> <span>results found</span>
+            <b className="mr-2">{repoList.length}</b> <span>results found</span>
           </Card.Footer>
         )}
       </Card>
